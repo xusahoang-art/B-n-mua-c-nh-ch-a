@@ -1,0 +1,126 @@
+
+<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Bạn mua được nhà chưa?</title>
+<style>
+:root{color-scheme:light;--bg:#fff3fa;--c:#fff;--t:#4a3b5c;--p:#ffb3d9;--y:#ffe46b;--b:#bfe6ff;--g:#b4f0c8;--on:#ff7eb6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--t);font:14px system-ui,sans-serif;overflow:hidden;touch-action:manipulation;user-select:none}
+#app{height:100%;display:flex;flex-direction:column}
+#top{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:8px;background:var(--p)}
+#main{flex:1;min-height:0;overflow:hidden;padding:8px;display:flex;flex-direction:column;gap:6px}
+#tabs{display:flex;gap:6px;padding:6px;background:var(--p)}#tabs button{flex:1;font-size:16px}
+button{border:0;border-radius:14px;background:var(--y);padding:8px 10px;font:inherit;color:var(--t);box-shadow:0 2px 0 #0002}
+button.on{background:var(--on)}button:active{transform:scale(.96)}
+.big{font-size:72px;text-align:center}.sm{font-size:12px;opacity:.7;margin:0}
+p{margin:4px 0;text-align:center}.row{display:flex;gap:6px}.row>*{flex:1}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.card{background:var(--c);border-radius:16px;padding:8px;text-align:center}
+.t{background:var(--g);border-radius:14px;padding:10px 0;font-size:26px;text-align:center}
+#mo{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:9}
+.cd{background:var(--c);border-radius:20px;padding:14px;width:78%;max-height:80%;overflow:auto;display:flex;flex-direction:column;gap:6px}.cd h3{margin:0;text-align:center}
+.fa{flex:1;min-height:0;background:var(--b);border-radius:16px;position:relative;overflow:hidden}
+.tm{text-align:center;font-weight:700;background:var(--y);border-radius:12px;padding:4px}
+.ln{position:absolute;left:0;right:0;top:45%;border-top:3px dashed #ff6fa5}
+.it{position:absolute;font-size:34px}
+.rw{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.ch{padding:5px 7px;font-size:12px}.ch small{display:block;opacity:.7}
+.cu{flex:1;background:var(--c);border-radius:12px;padding:4px;text-align:center;font-size:11px;position:relative}.cu i{display:block;height:5px;background:#ff8fb8;border-radius:3px}
+.bs{font-size:18px;padding:14px 12px}
+.em{font-size:28px;display:block;line-height:1.1}.sg{display:grid;gap:5px;min-height:0;grid-auto-rows:1fr}.sg .ch{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;padding:2px;border-radius:16px}.sg .ch small{display:block}.cu{min-height:86px;overflow:hidden}.sg .card{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px}.sg .t{font-size:min(6.5vh,40px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
+</style></head><body>
+<div id="app"><div id="top"><b id="c"></b><b id="d"></b><button onclick="askNext()">⏭️ Qua ngày<span id="wn"></span></button><button onclick="setg()">⚙️</button></div>
+<div id="main"></div>
+<div id="tabs"><button id="t1" onclick="go('home')">🏡 Khu nhà</button><button id="t2" onclick="go('town')">🏙️ Thị trấn</button></div></div><div id="mo"></div>
+<script>
+const $=s=>document.querySelector(s),f=n=>Math.round(n).toLocaleString('vi'),T=180,main=$('#main');
+const SEED=[['Rau','🥬',3,5,8],['Khoai','🥔',5,10,18],['Hoa','🌸',7,15,30],['Quả','🍎',10,20,50]];
+const AN={ga:['Gà','🐔',1000,5,1,5],cuu:['Cừu','🐑',5000,10,5,100],bo:['Bò','🐄',7000,15,1,50]};
+let S,S0,G=null;
+function ini(){S={c:0,d:1,land:0,house:0,rent:1,pl:[...Array(6)].map(()=>({b:0,t:Array(6).fill(null)})),pe:{ga:[],cuu:[],bo:[]},feed:0,cart:0,job:{},trade:0,debt:0,earn:0,spend:0,v:'home',sub:'house',pi:null};S0=JSON.stringify(S)}
+function sv(){try{localStorage.setItem('bm1',JSON.stringify([S,S0]))}catch(e){}}
+try{const x=JSON.parse(localStorage.getItem('bm1'));S=x[0];S0=x[1]}catch(e){}
+if(!S)ini();
+function add(n){S.c+=n;n>0?S.earn+=n:S.spend-=n}
+function modal(h){const m=$('#mo');m.innerHTML=h?`<div class="cd">${h}</div>`:'';m.style.display=h?'flex':'none'}
+const ok=t=>modal(`<p>${t}</p><button onclick="modal()">OK</button>`);
+function pay(n){if(S.c<n){ok('Chưa đủ tiền 😢');return 0}add(-n);return 1}
+function go(v){if(G)return;S.v=v;R()}
+function need(){let w=0,a=0;S.pl.forEach(p=>p.t.forEach(t=>t&&!t.w&&t.a<SEED[t.s][3]&&w++));for(const k in S.pe)S.pe[k].forEach(x=>!x.f&&a++);return[w,a]}
+function R(){if(!G)main.innerHTML=S.v=='home'?home():town();$('#c').textContent='💰 '+f(S.c);$('#d').textContent='📅 Ngày '+S.d;$('#t1').className=S.v=='home'?'on':'';$('#t2').className=S.v=='town'?'on':'';const[w,a]=need();$('#wn').textContent=w+a?' ⚠️':'';sv()}
+/* ---- NHÀ ---- */
+function home(){const u=S.sub,[w,a]=need(),bb='font-size:18px;padding:14px 18px',ct='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:0',E='font-size:min(8vh,50px)';const tb=`<div class="row" style="flex:none">${[['house','🏡 Nhà',''],['farm','🌱 Trồng',w?' ⚠️':''],['pen','🐾 Nuôi',a?' ⚠️':'']].map(([k,n,x])=>`<button style="font-size:16px;padding:12px 4px" class="${u==k?'on':''}" onclick="S.sub='${k}';S.pi=null;R()">${n}${x}</button>`).join('')}</div>`;let b='';
+if(u=='house')b=`<div style="${ct}"><div style="font-size:min(32vh,170px);line-height:1">${!S.land?'🟫':!S.house?'🏗️':'🏠'}</div>`+(!S.land?`<p>Mảnh đất trống</p><button style="${bb}" onclick="buy(1)">Mua đất · 500.000 xu</button>`:!S.house?`<p>Đã có đất, xây nhà nào!</p><button style="${bb}" onclick="buy(2)">Xây nhà · 500.000 xu</button>`:`<p style="font-size:18px">🎉 Bạn đã mua được nhà rồi!</p>`)+(S.house?'':`<p>Đang thuê nhà đến hết ngày ${S.rent}</p><div class="row" style="width:100%"><button style="${bb}" onclick="rt(1)">Thuê 1 ngày<br>100 xu</button><button style="${bb}" onclick="rt(7)">Thuê 7 ngày<br>500 xu</button></div>`)+`<p class="sm">Mỗi ngày tốn 30 xu ăn uống</p></div>`;
+else if(u=='farm'){if(S.pi==null){const n=S.pl.filter(p=>p.b).length;b=`<div class="sg" style="flex:1;grid-template-columns:repeat(3,1fr)">${S.pl.map((p,i)=>p.b?`<div class="card" onclick="S.pi=${i};R()"><span class="em" style="${E}">🌱</span>Mảnh ${i+1}<small>${p.t.filter(x=>x).length}/6 ô</small></div>`:`<div class="card" style="opacity:.75" onclick="bp(${i})"><span class="em" style="${E}">🟫</span>Mua<small>${f(10000+1000*n)} xu</small></div>`).join('')}</div>`}else{const p=S.pl[S.pi];b=`<div class="row" style="flex:none"><button style="padding:12px" onclick="S.pi=null;R()">⬅️ Quay lại</button><button style="padding:12px" onclick="wa()">💧 Tưới cả mảnh</button></div><div class="sg" style="flex:1;grid-template-columns:repeat(3,1fr)">${p.t.map((t,i)=>{let c='➕';if(t){const sd=SEED[t.s],r=t.a>=sd[3];c=r?sd[1]+'✅':(t.a>0?'🌱':'🌰')+(t.w?'💧':'❗')+`<small>${t.a}/${sd[3]}</small>`}return`<div class="t" onclick="tc(${i})">${c}</div>`}).join('')}</div>`}}
+else b=`<div class="row" style="flex:none"><button style="padding:12px" onclick="bf()">🌾 Mua thức ăn<br>10 phần · 20 xu</button><div class="card" style="display:flex;align-items:center;justify-content:center;font-size:16px">Kho: ${S.feed} phần 🌾</div></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0">`+Object.keys(AN).map(k=>{const[n,e,pr]=AN[k],ar=S.pe[k],old=ar.filter(x=>x.a>=100).length,hu=ar.filter(x=>!x.f).length;return`<div class="card" style="flex:1;display:flex;gap:8px;align-items:center;min-height:0"><div style="font-size:min(10vh,56px)">${e}</div><div style="flex:1"><b>${n} ${ar.length}/10</b> · ${f(pr)} xu<br><small>${ar.filter(x=>x.a<AN[k][3]).length} nhỏ · ${old} già · ${hu} đói${hu?' ⚠️':''}</small><div class="row" style="margin-top:4px"><button style="padding:10px 2px" onclick="ba('${k}')">Mua</button><button style="padding:10px 2px" onclick="fa_('${k}')">Cho ăn</button><button style="padding:10px 2px" onclick="so('${k}')">Bán già</button></div></div></div>`}).join('')+`</div>`;
+return tb+b}
+function buy(k){if(pay(500000)){k==1?S.land=1:S.house=1;if(k==2)ok('🎉 Chúc mừng! Bạn đã mua được nhà!');R()}}
+function rt(n){if(pay(n==1?100:500)){S.rent=Math.max(S.rent,S.d-1)+n;R()}}
+function bp(i){const n=S.pl.filter(p=>p.b).length;if(pay(10000+1000*n)){S.pl[i].b=1;R()}}
+function wa(){S.pl[S.pi].t.forEach(t=>t&&(t.w=1));R()}
+function tc(i){const p=S.pl[S.pi],t=p.t[i];if(!t)return modal(`<h3>Chọn hạt giống</h3>`+SEED.map((s,k)=>`<button onclick="pl(${i},${k})">${s[1]} ${s[0]} · ${s[2]} xu · ${s[3]} ngày → ${s[4]} xu</button>`).join('')+`<button onclick="modal()">Đóng</button>`);const sd=SEED[t.s];if(t.a>=sd[3]){add(sd[4]);p.t[i]=null}else t.w=1;R()}
+function pl(i,k){if(pay(SEED[k][2])){S.pl[S.pi].t[i]={s:k,a:0,w:0,m:0};modal();R()}}
+function bf(){if(pay(20)){S.feed+=10;R()}}
+function ba(k){if(S.pe[k].length>=10)return ok('Chuồng đầy (10 con)');if(pay(AN[k][2])){S.pe[k].push({a:0,f:0,m:0,k:0});R()}}
+function fa_(k){S.pe[k].forEach(a=>{if(!a.f&&S.feed>0){S.feed--;a.f=1}});R()}
+function so(k){const o=S.pe[k].filter(x=>x.a>=100).length;if(!o)return ok('Chưa có con nào già (100 ngày)');S.pe[k]=S.pe[k].filter(x=>x.a<100);add(o*AN[k][2]);R()}
+/* ---- QUA NGÀY ---- */
+function askNext(){if(G)return;const[w,a]=need();modal(`<h3>Qua ngày?</h3>${w||a?`<p>⚠️ Còn ${w} ô cây chưa tưới, ${a} con chưa cho ăn!</p>`:''}<button onclick="pass()">Qua ngày</button><button onclick="modal()">Quay lại</button>`)}
+function pass(force){modal();const rn=!S.house&&S.rent<S.d+1,nd=30+(rn?100:0);
+if(!force&&S.c<nd)return modal(`<h3>Không đủ tiền!</h3><p>Cần ${nd} xu chi tiêu.</p><button onclick="S=JSON.parse(S0);modal();R()">🔁 Chơi lại ngày này</button><button onclick="pass(1)">💸 Vay nợ</button>`);
+S.pl.forEach(p=>p.t.forEach((t,i)=>{if(!t)return;if(t.w){t.m=0;if(t.a<SEED[t.s][3])t.a++}else if(++t.m>=3){p.t[i]=null;return}t.w=0}));
+for(const k in S.pe){const A=AN[k];S.pe[k]=S.pe[k].filter(a=>{if(a.f){a.m=0;a.a++;if(a.a>=A[3]&&a.a<100&&++a.k>=A[4]){a.k=0;add(A[5])}}else if(++a.m>=3)return 0;a.f=0;return 1})}
+add(-nd);if(rn)S.rent=S.d+1;S.d++;
+if(S.c<0){if(++S.debt>=7){ini();R();return ok('Nợ quá 7 ngày liên tục, bạn thua rồi! Chơi lại từ đầu nhé 😢')}}else S.debt=0;
+const e=S.earn,sp=S.spend;S.earn=S.spend=0;S.job={};S.trade=0;S0=JSON.stringify(S);R();
+modal(`<h3>Tổng kết ngày ${S.d-1}</h3><p>Kiếm: +${f(e)} xu</p><p>Tiêu: −${f(sp)} xu</p>${S.c<0?`<p>⚠️ Đang nợ ${f(-S.c)} xu (ngày nợ ${S.debt}/7)</p>`:''}<button onclick="modal()">Sang ngày ${S.d}</button>`)}
+function setg(){if(G)return;modal(`<h3>⚙️ Cài đặt</h3><button onclick="sv();ok('Đã lưu 💾')">💾 Lưu dữ liệu</button><button onclick="modal(\`<p>Chơi lại từ đầu?</p><button onclick='ini();modal();R()'>Chơi lại</button><button onclick='modal()'>Huỷ</button>\`)">🔄 Chơi lại từ đầu</button><button onclick="modal()">Đóng</button>`)}
+/* ---- THỊ TRẤN ---- */
+const JOBS=[['chai','🧴','Nhặt ve chai'],['vac','📦','Bê vác'],['bat','🍽️','Rửa bát'],['spa','🐶','Spa pet']];
+function town(){const dn=Object.keys(S.job).length,E='font-size:min(7vh,46px)',cd='flex:1;display:flex;flex-direction:column;gap:6px;min-height:0';return`<div class="card" style="${cd}"><div><b>🧰 Làm thuê</b> <small>(chỉ 1 nghề/ngày)</small></div><div class="sg" style="flex:1;grid-template-columns:1fr 1fr">${JOBS.map(j=>`<button class="ch ${dn?'':'on'}" onclick="job('${j[0]}')"><span class="em" style="${E}">${j[1]}</span>${j[2]}${S.job[j[0]]?' ✅':''}</button>`).join('')}</div></div><div class="card" style="${cd}"><div><b>🛒 Buôn bán</b> <small>(1 quán/ngày)</small>${S.trade?' <small>· hôm nay đã bán rồi</small>':''}</div>${S.cart?`<div class="sg" style="flex:1;grid-template-columns:repeat(3,1fr)">${ST.map((s,i)=>`<button class="ch ${S.trade?'':'on'}" onclick="stall(${i})"><span class="em" style="${E}">${s[1]}</span>${s[0]}</button>`).join('')}</div>`:`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><div style="font-size:min(14vh,80px)">🛒</div><p>Cần có xe đẩy</p><button style="font-size:18px;padding:14px 18px" onclick="if(pay(3000)){S.cart=1;R()}">Mua xe đẩy · 3.000 xu</button></div>`}</div>`}
+function job(id){if(Object.keys(S.job).length)return ok('Hôm nay đã làm thuê rồi, mai làm nghề khác nhé!');S.job[id]=1;begin({id});({chai:gChai,vac:gVac,bat:gBat,spa:gSpa})[id]()}
+function begin(o){G=Object.assign({t:T,p:0,x:[],ph:1},o);G.iv=setInterval(()=>{if(!G.ph)return;G.t--;if(G.tk)G.tk();hud();if(G.t<=0)endG()},1000)}
+function hud(){const e=$('#tm');if(e)e.textContent=`⏱ ${G.t}s · 💰 ${f(G.p)} xu`}
+function endG(){clearInterval(G.iv);G.x.forEach(clearInterval);const tr=G.id=='tr',p=G.p;if(!tr)add(p);G=null;S.v='town';R();ok(tr?`🚪 Đóng quán! Doanh thu: ${f(p)} xu`:`🎉 Hết giờ! Bạn kiếm được +${f(p)} xu`)}
+const bar=()=>`<div class="row" style="flex:none"><div id="tm" class="tm" style="flex:3;display:flex;align-items:center;justify-content:center"></div>${G.id=='tr'?'':'<button onclick="endG()">😴 Nghỉ sớm</button>'}</div>`;
+/* nhặt ve chai */
+function gChai(){main.innerHTML=bar()+`<div id="fa" class="fa"><div class="ln"></div></div>`;const fa=$('#fa');hud();
+G.x=[setInterval(()=>{const e=document.createElement('div'),b=Math.random()<.5;e.className='it';e.textContent=b?'🧴':'📰';e.v=b?1:.6;e.style.left=Math.random()*80+'%';e.y=-30;e.onpointerdown=()=>{if(e.y+34>=fa.clientHeight*.45){G.p+=e.v;e.remove();hud()}else e.style.opacity=.4};fa.append(e)},700),
+setInterval(()=>{const H=fa.clientHeight;fa.querySelectorAll('.it').forEach(e=>{e.y+=H/40;e.style.top=e.y+'px';if(e.y>H)e.remove()})},30)]}
+/* bê vác */
+function gVac(){G.s=0;G.pos=0;main.innerHTML=bar()+`<div id="fa" class="fa" style="display:flex;flex-direction:column;justify-content:space-between;padding:10px"><p id="hint"></p><div style="position:relative;height:60px"><div id="ch" style="position:absolute;font-size:44px;left:0;transition:left .2s"></div></div><div style="display:flex;justify-content:space-between;font-size:60px"><span id="tr">🚚</span><span>🏭</span></div></div>`;$('#fa').onpointerdown=vt;hud();vh()}
+function vh(){const s=G.s;$('#hint').textContent=['Chạm 🚚 để vác hàng lên vai','Chạm liên tục để chạy về kho!','Đã bê 1 thùng! Chạm 🚚 để chạy lại xe','Đang chạy về xe...'][s];const c=$('#ch');c.textContent='🏃'+(s==1?'📦':'');c.style.left=`calc((100% - 70px)*${G.pos/100})`}
+function vt(e){const s=G.s,tr=e.target.id=='tr';if(tr&&s==0)G.s=1;else if(tr&&s==2){G.s=3;G.pos=0;setTimeout(()=>{if(G){G.s=0;vh()}},1000)}else if(s==1&&!tr){G.pos+=10;if(G.pos>=100){G.pos=100;G.p+=3;G.s=2}}vh();hud()}
+/* rửa bát */
+function gBat(){G.st=0;G.dp=0;G.gr=60;rb()}
+function rb(){const s=G.st,hs=['① Chạm thau 1 để nhúng đĩa 💧',G.dp?'② Vuốt lên đĩa để chà sạch dầu mỡ 🧽':'② Chạm thau 2 (xà phòng) 🧼','③ Đĩa sạch rồi! Chạm thau 3 để tráng 💦','④ Chạm giàn để úp đĩa 🧺'];main.innerHTML=bar()+`<p style="flex:none;margin:0"><b>${hs[s]}</b></p><div id="ds" class="fa" style="touch-action:none;display:flex;align-items:center;justify-content:center"><div id="dsh" style="font-size:min(32vh,160px)">${s<2&&!(s==1&&!G.dp)?'':''}${s==0||(s==1&&!G.dp)?'🍽️':s==1?'🍽️':'🫧'}</div></div><div class="sg" style="flex:none;height:105px;grid-template-columns:repeat(4,1fr)">${['💧Thau 1','🧼Thau 2','💦Thau 3','🧺Giàn úp'].map((x,i)=>`<button class="ch ${s==i&&!(s==1&&G.dp)?'on':''}" onclick="bt(${i})">${eb(x)}</button>`).join('')}</div>`;const d=$('#ds');d.onpointerdown=e=>{G.lx=e.clientX;G.ly=e.clientY};d.onpointerup=d.onpointerleave=()=>{G.lx=null};d.onpointermove=e=>{if(G.lx==null||G.st!=1||!G.dp)return;G.gr-=Math.hypot(e.clientX-G.lx,e.clientY-G.ly)/5;G.lx=e.clientX;G.ly=e.clientY;if(G.gr<=0){G.st=2;G.dp=0;G.lx=null;rb()}else gs()};gs();hud()}
+function gs(){const e=$('#dsh'),g=Math.max(G.gr,0)/60;if(e&&G.st<2)e.style.filter=G.st==1&&G.dp?`sepia(${g}) saturate(${1+g*2}) brightness(${1-.35*g})`:'none'}
+function bt(i){const s=G.st;if(i==0&&s==0){G.st=1;G.dp=0;G.gr=60}else if(i==1&&s==1&&!G.dp)G.dp=1;else if(i==2&&s==2)G.st=3;else if(i==3&&s==3){G.p++;G.st=0}else return;rb()}
+/* spa pet */
+const eb=n=>{const e=n.match(/^[^\p{L}]+/u)[0];return`<span class="em">${e}</span>${n.slice(e.length).trim()}`};
+const PET=['🐶','🐱','🐰','🐹'],TUB=['🛁Bồn nhỏ','🛁Bồn vừa','🛁Bồn lớn'],SH=['🧴Sữa tắm thường','🪲Sữa tắm ve rận'],AC=['🍪Bánh thưởng','🍗Gà sấy','🎾Bóng cắn','✂️Cắt móng','🌸Nước hoa','👂Vệ sinh tai'],rn=n=>Math.random()*n|0,tx_=s=>s.replace(/^[^\p{L}]+/u,'');
+function gSpa(){nq()}
+function nq(){const a=new Set(),m=1+rn(3);while(a.size<m)a.add(rn(6));G.q={p:PET[rn(4)],t:rn(3),s:rn(2),a};G.c=[-1,-1,new Set()];sp()}
+function sp(){const q=G.q,w=[...q.a].sort().map(i=>tx_(AC[i])).join(' + ');main.innerHTML=bar()+`<div class="card" style="flex:none"><span style="font-size:34px">${q.p}</span> <b>Khách muốn:</b> ${tx_(TUB[q.t])} · ${tx_(SH[q.s])} · ${w}</div>`+[[TUB,3,1],[SH,2,1],[AC,6,2]].map(([L,c,fl],g)=>`<div class="sg" style="flex:${fl};grid-template-columns:repeat(${c>5?3:c},1fr)">${L.map((x,i)=>`<button class="ch ${(g==2?G.c[2].has(i):G.c[g]==i)?'on':''}" onclick="sc(${g},${i})">${eb(x)}</button>`).join('')}</div>`).join('')+`<button style="flex:none;font-size:18px;padding:12px" onclick="sd()">✅ Tắm xong</button>`;hud()}
+function sc(g,i){g==2?(G.c[2].has(i)?G.c[2].delete(i):G.c[2].add(i)):G.c[g]=i;sp()}
+function sd(){const q=G.q,a=[...q.a].sort().join(),b=[...G.c[2]].sort().join();if(G.c[0]==q.t&&G.c[1]==q.s&&a==b){G.p+=5;nq()}else $('#tm').textContent='❌ Chưa đúng yêu cầu khách!'}
+/* ---- BUÔN BÁN ---- */
+const ST=[
+['Tào phớ','🍮',[['o','🍮Tào phớ,1,3'],['m','⚪Trân châu,2,4','🟣Thạch,2,4','🥥Dừa,2,4','🍮Pudding,2,4'],['o','🍬Nước đường,2,4','🥛Sữa đậu,2,4'],['f','🧊Đá']]],
+['Chè','🍧',[['m','🫘Đậu,2,4','🌽Ngô,2,4','⚪Trân châu,2,4','🟣Thạch,2,4','🌾Cốm,2,4','🪷Hạt sen,2,4','🥥Dừa,2,4','🥛Nước cốt dừa,1,3'],['f','🧊Đá']]],
+['Bánh mì','🥖',[['o','🥖Bánh mì,2,5'],['m','🌿Rau thơm,1,3','🥒Dưa chuột,1,3','🥕Dưa chua,1,3'],['m','🍢Thịt nướng,5,10','🍢Chả,5,10','🍞Pate,5,10','🍳Trứng rán,5,10'],['f','🌶️Cay','🥫Sốt']]],
+['Trà sữa','🧋',[['o','🧋Trà sữa,2,6','🍵Matcha,2,6','🍹Trà hoa quả,2,6','🥥Nước dừa,2,6'],['m','⚪Trân châu,2,4','🟣Thạch,2,4','🍮Pudding,2,4','🧀Kem cheese,2,4','🫧Hạt nổ,2,4','🥥Cùi dừa,2,4','🍡Mochi,2,4','🧂Kem muối,2,4'],['f','🧊Đá']]],
+['Bún phở','🍜',[['o','🍜Bún,2,4','🍲Phở,2,4'],['o','🍖Nước phở,2,4','🦴Nước xương,2,4','🌶️Nước Thái,2,4'],['m','🥩Bò tái,5,10','🍖Thịt hầm,5,10','🍗Thịt gà,5,10','🍡Mọc,5,10','🍢Chả nướng,5,10','🐷Giò tai,5,10','🍖Chân giò,5,10','🟨Đậu rán,5,10'],['f','🌱Hành lá']]],
+['Cơm','🍚',[['o','🍚Cơm,1,2'],['m','🍳Trứng rán,5,8','🥘Thịt kho,5,8','🥩Bò xào,5,8','🍲Bò sốt vang,5,8','🥟Nem rán,5,8','🍗Gà rán,5,8','🍗Gà chiên mắm,5,8','🍖Sườn xào,5,8'],['m','🥬Rau luộc,2,4','🥦Rau xào,2,4'],['f','🥣Canh']]]];
+const IT=s=>{const[n,c,p]=s.split(',');return{n,c:+c||0,p:+p||0,e:n.match(/^[^\p{L}]+/u)[0]}};
+const keys=k=>ST[k][2].flatMap((g,gi)=>g.slice(1).map((s,i)=>({k:gi+'.'+i,g:g[0],gi,...IT(s)})));
+function stall(k){if(S.trade)return ok('Hôm nay đã bán rồi, mai bán tiếp nhé!');S.trade=1;begin({id:'tr',k,ph:0,sk:{},cu:[],sel:new Set(),sv:0,nx:2,all:keys(k)});tp()}
+function tp(){const L=G.all.filter(x=>x.g!='f'),c=L.length<=6?2:L.length<=12?3:4;main.innerHTML=`<div class="card" style="flex:none"><b>📦 Nhập hàng</b> <small>5 phần = giá ×5 · hết ngày hàng hỏng</small></div><div class="sg" style="flex:1;grid-template-columns:repeat(${c},1fr)">${L.map(x=>`<button class="ch" onclick="tb('${x.k}')">${eb(x.n)}×${G.sk[x.k]||0}<small>+5 · ${x.c*5} xu</small></button>`).join('')}</div><div class="row" style="flex:none"><button onclick="G.ph=1;fill();trR()" class="on">▶️ Mở bán</button><button onclick="bk()">⬅️ Chọn quán khác</button></div>`}
+function tb(k){const x=G.all.find(a=>a.k==k);if(pay(x.c*5)){G.spent=(G.spent||0)+x.c*5;G.sk[k]=(G.sk[k]||0)+5;R();tp()}}
+function bk(){clearInterval(G.iv);S.c+=G.spent||0;S.spend-=G.spent||0;S.trade=0;G=null;S.v='town';R()}
+function gen(){const o=[];for(const[gi,g]of ST[G.k][2].entries()){const L=G.all.filter(x=>x.gi==gi&&(g[0]=='f'||G.sk[x.k]>0));if(g[0]=='o'){if(!L.length)return;o.push(L[rn(L.length)].k)}else if(g[0]=='m'){const al=Math.random()<.3;L.forEach(x=>{if(al||Math.random()<.4)o.push(x.k)})}else L.forEach(x=>{if(Math.random()<.5)o.push(x.k)})}return o.some(k=>G.all.find(x=>x.k==k).g!='f')?o:0}
+function trR(){main.innerHTML=bar()+`<div class="row" style="flex:none">${[0,1,2].map(i=>{const c=G.cu[i];return c?`<div class="cu" onclick="tg(${i})"><b>🙂 Khách ${i+1}</b><br>${c.o.map(k=>G.all.find(x=>x.k==k).n).join(', ')}<i style="width:${c.pa/30*100}%"></i></div>`:`<div class="cu" style="opacity:.3">…</div>`}).join('')}</div>`+ST[G.k][2].map((g,gi)=>{const L=G.all.filter(x=>x.gi==gi),c=L.length<=4?L.length:L.length<=8?4:5;return`<div class="sg" style="flex:${Math.ceil(L.length/c)};grid-template-columns:repeat(${c},1fr)">${L.map(x=>`<button class="ch ${G.sel.has(x.k)?'on':''}" onclick="ts('${x.k}')">${eb(x.n)}${x.g!='f'?`<small>×${G.sk[x.k]||0}</small>`:''}</button>`).join('')}</div>`}).join('')+`<div class="row" style="flex:none"><button onclick="G.sel.clear();trR()">🗑 Bỏ ly</button><button onclick="endG()">🚪 Đóng quán</button></div>`;hud()}
+function ts(k){const x=G.all.find(a=>a.k==k);if(G.sel.has(k))G.sel.delete(k);else{if(x.g!='f'&&!(G.sk[k]>0))return;if(x.g=='o')G.all.filter(a=>a.gi==x.gi).forEach(a=>G.sel.delete(a.k));G.sel.add(k)}trR()}
+function use(){G.sel.forEach(k=>{if(G.sk[k])G.sk[k]--});G.sel.clear()}
+function fill(){while(G.cu.length<3){const o=gen();if(!o)break;G.cu.push({o,pa:30})}}
+function tg(i){const c=G.cu[i];if(!c||!G.sel.size)return;const a=[...G.sel].sort().join(),b=c.o.slice().sort().join();if(a==b){const r=c.o.reduce((s,k)=>s+G.all.find(x=>x.k==k).p,0);add(r);G.p+=r;use();G.cu.splice(i,1);G.sv++;fill();R();trR()}else modal(`<h3>😟 Khách không nhận!</h3><p>Làm sai đơn rồi.</p><button onclick="tx(${i},0)">🗑 Bỏ đi</button><button onclick="tx(${i},1)">🎁 Tặng free (+10s kiên nhẫn)</button>`)}
+function tx(i,fr){use();if(fr&&G.cu[i])G.cu[i].pa+=10;modal();trR()}
+setInterval(()=>{if(!G||G.id!='tr'||!G.ph)return;G.cu.forEach(c=>c.pa--);G.cu=G.cu.filter(c=>c.pa>0);fill();trR()},1000);
+R();
+</script></body></html>
